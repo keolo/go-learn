@@ -48,8 +48,8 @@ logs: ## Tail application logs
 	kubectl logs -f $(APP_POD) --namespace $(APP)
 
 .PHONY: restart
-restart: ## Delete pod (which will automatically start another one)
-	kubectl delete pod $(APP_POD) --namespace $(APP)
+restart: ## Delete application pods (which will automatically start another one)
+	kubectl delete pod --namespace $(APP) -l app=$(APP)
 	@kubectl get -w pods --namespace $(APP)
 
 .PHONY: ls
