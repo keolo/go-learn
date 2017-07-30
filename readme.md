@@ -25,4 +25,5 @@ version of minikube until its version of k8s updates its version of docker.
 
 https://github.com/kubernetes/minikube/pull/1542#issuecomment-318683859
 
+    minikube start --iso-url=https://storage.googleapis.com/minikube-builds/1542/minikube-testing.iso
     docker version

@@ -4,8 +4,9 @@ import (
     "encoding/json"
     "log"
     "net/http"
-
     "github.com/gorilla/mux"
+    // "gopkg.in/mgo.v2"
+    // "gopkg.in/mgo.v2/bson"
 )
 
 type Person struct {
