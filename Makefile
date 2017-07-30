@@ -1,11 +1,12 @@
 .DEFAULT_GOAL := help
 
 APP := go-learn
+CHART := $(APP)
 RELEASE := $(APP)-local
 APP_POD := $(shell kubectl get pods --namespace $(APP) -o \
 	jsonpath='{.items[*].metadata.name}')
 PWD := $(shell pwd)
-SHA := $(git rev-parse --verify --short HEAD)
+SHA := $(shell git rev-parse --verify --short HEAD)
 
 .PHONY: upgrade
 upgrade: ## Install/upgrade application
@@ -15,10 +16,14 @@ upgrade: ## Install/upgrade application
 	eval $$(minikube docker-env) \
 		&& docker build -t keolo/$(APP):latest . \
 		&& helm upgrade \
-			--install $(RELEASE) \
+			$(RELEASE) \
+			$(CHART) \
+			--install \
+			--repo http://127.0.0.1:8879 \
 			--namespace $(APP) \
-			--recreate-pods $(APP) \
-			--repo http://127.0.0.1:8879
+			--recreate-pods \
+			--force \
+		&& make restart
 
 	@kubectl get -w pods --namespace $(APP)
 
