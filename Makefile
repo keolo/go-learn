@@ -31,7 +31,7 @@ open: ## Open application in the browser
 
 .PHONY: sh
 sh: ## Shell into application pod
-	@kubectl exec -it $(APP_POD) bash
+	@kubectl exec -it $(APP_POD) sh --namespace $(APP)
 
 .PHONY: logs
 logs: ## Tail application logs
