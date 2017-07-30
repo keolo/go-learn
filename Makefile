@@ -12,10 +12,8 @@ upgrade: ## Install/upgrade application
 		&& helm init
 
 	eval $$(minikube docker-env) \
-		&& docker build -t keolo/$(APP):latest -f Dockerfile . \
-		&& helm upgrade --install $(RELEASE) $(APP) --namespace $(APP) --recreate-pods
-
-	@make clean
+		&& docker build -t keolo/$(APP):latest . \
+		&& helm upgrade --install $(RELEASE) --namespace $(APP) --recreate-pods $(APP)
 
 	@kubectl get -w pods --namespace $(APP)
 
@@ -50,6 +48,7 @@ ls: ## List deployments
 .PHONY: delete
 delete: ## Delete deployment
 	helm delete --purge $(RELEASE)
+	@make clean
 
 .PHONY: manifest
 manifest: ## Get the compiled manifest for this application
