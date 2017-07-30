@@ -5,6 +5,7 @@ RELEASE := $(APP)-local
 APP_POD := $(shell kubectl get pods --namespace $(APP) -o \
 	jsonpath='{.items[*].metadata.name}')
 PWD := $(shell pwd)
+SHA := $(git rev-parse --verify --short HEAD)
 
 .PHONY: upgrade
 upgrade: ## Install/upgrade application
@@ -13,7 +14,11 @@ upgrade: ## Install/upgrade application
 
 	eval $$(minikube docker-env) \
 		&& docker build -t keolo/$(APP):latest . \
-		&& helm upgrade --install $(RELEASE) --namespace $(APP) --recreate-pods $(APP)
+		&& helm upgrade \
+			--install $(RELEASE) \
+			--namespace $(APP) \
+			--recreate-pods $(APP) \
+			--repo http://127.0.0.1:8879
 
 	@kubectl get -w pods --namespace $(APP)
 
@@ -40,6 +45,7 @@ logs: ## Tail application logs
 .PHONY: restart
 restart: ## Delete pod (which will automatically start another one)
 	kubectl delete pod $(APP_POD) --namespace $(APP)
+	@kubectl get -w pods --namespace $(APP)
 
 .PHONY: ls
 ls: ## List deployments
