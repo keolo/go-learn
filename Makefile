@@ -1,4 +1,3 @@
-.PHONY: install setup get open sh logs ls delete manifest clean help
 .DEFAULT_GOAL := help
 
 APP := go-learn
@@ -7,49 +6,61 @@ APP_POD := $(shell kubectl get pods --namespace $(APP) -o \
 	jsonpath='{.items[*].metadata.name}')
 PWD := $(shell pwd)
 
-install: ## Install application
+.PHONY: upgrade
+upgrade: ## Install/upgrade application
 	@eval $$(minikube docker-env) \
 		&& helm init
 
 	eval $$(minikube docker-env) \
 		&& docker build -t keolo/$(APP):latest -f Dockerfile . \
-		&& helm install $(APP) --name $(RELEASE) --namespace $(APP) --replace
+		&& helm upgrade --install $(RELEASE) $(APP) --namespace $(APP) --recreate-pods
 
 	@make clean
 
 	@kubectl get -w pods --namespace $(APP)
 
+.PHONY: test
 test: ## Run test suite
 	@kubectl exec $(APP_POD) rspec
 
+.PHONY: get
 get: ## Get running resources
 	kubectl get pods,services,rs,deployments,pvc,pv,secrets --namespace $(APP)
 
+.PHONY: open
 open: ## Open application in the browser
 	minikube service $(RELEASE) --namespace $(APP)
 
+.PHONY: sh
 sh: ## Shell into application pod
 	@kubectl exec -it $(APP_POD) bash
 
+.PHONY: logs
 logs: ## Tail application logs
 	kubectl logs -f $(APP_POD) --namespace $(APP)
 
+.PHONY: restart
 restart: ## Delete pod (which will automatically start another one)
 	kubectl delete pod $(APP_POD) --namespace $(APP)
 
+.PHONY: ls
 ls: ## List deployments
 	helm ls
 
+.PHONY: delete
 delete: ## Delete deployment
 	helm delete --purge $(RELEASE)
 
+.PHONY: manifest
 manifest: ## Get the compiled manifest for this application
 	helm get manifest $(RELEASE)
 
+.PHONY: clean
 clean: ## Remove dangling docker images
 	@eval $$(minikube docker-env) \
 		&& docker images -qf dangling=true | xargs docker rmi
 
+.PHONY: help
 help:
 	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | \
 		awk 'BEGIN {FS = ":.*?## "}; \
