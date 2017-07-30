@@ -1,7 +1,7 @@
 apiVersion: extensions/v1beta1
 kind: Deployment
 metadata:
-  name: {{ template "name" . }}
+  name: {{ .Release.Name }}
   labels:
   # https://github.com/kubernetes/helm/blob/df92425fa9d06f1233876871e96e4d82c194215b/docs/chart_best_practices/labels.md#labels-and-annotations
   labels:
@@ -25,12 +25,26 @@ spec:
         app: {{ template "name" . }}
         release: {{ .Release.Name }}
     spec:
+      {{ if .Values.volumesHostPath }}
+      volumes:
+        # Directory location on minikube host which automatically gets
+        # mounted from MacOS. I.e. MacOS host -> Minikube host -> container
+        - name: {{ template "name" . }}-volume
+          hostPath:
+            path: "{{ .Values.volumesHostPath }}"
+      {{ end }}
       containers:
         - name: {{ .Chart.Name }}
           image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
           imagePullPolicy: {{ .Values.image.pullPolicy }}
           ports:
             - containerPort: {{ .Values.service.internalPort }}
+          {{ if .Values.volumesHostPath }}
+          volumeMounts:
+            # Mount the volume to the following path in the container
+            - mountPath: /usr/src/app
+              name: {{ template "name" . }}-volume
+          {{ end }}
           # livenessProbe:
           #   httpGet:
           #     path: /liveness
