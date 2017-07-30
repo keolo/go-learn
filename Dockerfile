@@ -1,8 +1,8 @@
 # Build envrionment
 FROM golang:1.7.3 as builder
 WORKDIR /usr/src
-RUN go get -d -v golang.org/x/net/html
-RUN go get -d -v github.com/gorilla/mux
+RUN go get -d -v golang.org/x/net/html && \
+    go get -d -v github.com/gorilla/mux
 COPY main.go .
 RUN CGO_ENABLED=0 GOOS=linux go build -a -installsuffix cgo -o main .
 

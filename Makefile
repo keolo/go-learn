@@ -43,7 +43,7 @@ restart: ## Delete pod (which will automatically start another one)
 
 .PHONY: ls
 ls: ## List deployments
-	helm ls
+	@helm ls
 
 .PHONY: delete
 delete: ## Delete deployment
@@ -53,6 +53,14 @@ delete: ## Delete deployment
 .PHONY: manifest
 manifest: ## Get the compiled manifest for this application
 	helm get manifest $(RELEASE)
+
+.PHONY: history
+history: ## Get the history of this release
+	helm history $(RELEASE)
+
+.PHONY: rollback
+rollback: ## Rollback to a particular version
+	helm rollback go-learn-local --recreate-pods $(VERSION)
 
 .PHONY: clean
 clean: ## Remove dangling docker images
