@@ -24,10 +24,12 @@ type Address struct {
 var people []Person
 
 func GetLivenessEndpoint(w http.ResponseWriter, req *http.Request) {
+    log.Println(req)
     w.WriteHeader(http.StatusNoContent)
 }
 
 func GetReadinessEndpoint(w http.ResponseWriter, req *http.Request) {
+    log.Println(req)
     // TODO: Add application checks like db connection, etc
     w.WriteHeader(http.StatusNoContent)
 }
