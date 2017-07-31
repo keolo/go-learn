@@ -76,7 +76,7 @@ rollback: ## Rollback to a particular version
 .PHONY: clean
 clean: ## Remove dangling docker images
 	@eval $$(minikube docker-env) \
-		&& docker images -qf dangling=true | xargs docker rmi
+		&& docker images -qf dangling=true | xargs docker rmi -f
 
 .PHONY: help
 help:

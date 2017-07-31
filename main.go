@@ -5,8 +5,8 @@ import (
     "log"
     "net/http"
     "github.com/gorilla/mux"
-    // "gopkg.in/mgo.v2"
-    // "gopkg.in/mgo.v2/bson"
+    "gopkg.in/mgo.v2"
+    "gopkg.in/mgo.v2/bson"
 )
 
 type Person struct {
@@ -67,7 +67,39 @@ func DeletePersonEndpoint(w http.ResponseWriter, req *http.Request) {
     json.NewEncoder(w).Encode(people)
 }
 
+type Animal struct {
+    Kind string
+    Name string
+}
+
 func main() {
+    // TODO: Make the hostname dynamic by using an env var
+    session, err := mgo.Dial("go-learn-local-mongodb")
+    if err != nil {
+        panic(err)
+    }
+    defer session.Close()
+
+    // Optional. Switch the session to a monotonic behavior.
+    // session.SetMode(mgo.Monotonic, true)
+
+    c := session.DB("test").C("animal")
+    err = c.Insert(&Animal{Kind: "Dog", Name: "Woofy"},
+                   &Animal{Kind: "Cat", Name: "Kitty"})
+    if err != nil {
+        log.Fatal(err)
+    }
+
+    result := Animal{}
+    err = c.Find(bson.M{"name": "Woofy"}).One(&result)
+
+    log.Println(result)
+
+    if err != nil {
+        log.Print(err)
+        log.Print(result)
+    }
+
     router := mux.NewRouter()
     people = append(people, Person{ID: "1", Firstname: "Niki", Lastname: "Lauder", Address: &Address{City: "Dublin", State: "CA"}})
     people = append(people, Person{ID: "2", Firstname: "James", Lastname: "Hunt"})
