@@ -1,0 +1,61 @@
+apiVersion: extensions/v1beta1
+kind: Deployment
+metadata:
+  name: {{ .Release.Name }}
+  labels:
+  # https://github.com/kubernetes/helm/blob/df92425fa9d06f1233876871e96e4d82c194215b/docs/chart_best_practices/labels.md#labels-and-annotations
+  labels:
+    app: {{ template "name" . }}
+    # This makes it easy to audit chart usage.
+    chart: "{{ .Chart.Name }}-{{ .Chart.Version | replace "+" "_" }}"
+    environment: {{ .Values.environment | quote }}
+    # The "heritage" label is used to track which tool deployed a given chart.
+    # It is useful for admins who want to see what releases a particular tool
+    # is responsible for.
+    heritage: {{ .Release.Service }}
+    # The "release" convention makes it easy to tie a release to all of the
+    # Kubernetes resources that were created as part of that release.
+    release: {{ .Release.Name }}
+    # tier: "backend"
+spec:
+  replicas: {{ .Values.replicaCount }}
+  template:
+    metadata:
+      labels:
+        app: {{ template "name" . }}
+        release: {{ .Release.Name }}
+    spec:
+      {{ if .Values.volumesHostPath }}
+      volumes:
+        # Directory location on minikube host which automatically gets
+        # mounted from MacOS. I.e. MacOS host -> Minikube host -> container
+        - name: {{ template "name" . }}-volume
+          hostPath:
+            path: "{{ .Values.volumesHostPath }}"
+      {{ end }}
+      containers:
+        - name: {{ .Chart.Name }}
+          image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          ports:
+            - containerPort: {{ .Values.service.internalPort }}
+          {{ if .Values.volumesHostPath }}
+          volumeMounts:
+            # Mount the volume to the following path in the container
+            - mountPath: /usr/src/app
+              name: {{ template "name" . }}-volume
+          {{ end }}
+          livenessProbe:
+            httpGet:
+              path: /liveness
+              port: {{ .Values.service.internalPort }}
+          readinessProbe:
+            httpGet:
+              path: /readiness
+              port: {{ .Values.service.internalPort }}
+          resources:
+{{ toYaml .Values.resources | indent 12 }}
+    {{- if .Values.nodeSelector }}
+      nodeSelector:
+{{ toYaml .Values.nodeSelector | indent 8 }}
+    {{- end }}

@@ -1,12 +1,19 @@
 .DEFAULT_GOAL := help
 
 APP := go-learn
-CHART := $(APP)
+CHART := helm-chart
+REPOSITORY := iamplus/$(APP)
+TAG := latest
 RELEASE := $(APP)-local
-APP_POD := $(shell kubectl get pods --namespace $(APP) -o \
-	jsonpath='{.items[*].metadata.name}')
-PWD := $(shell pwd)
-SHA := $(shell git rev-parse --verify --short HEAD)
+ENVIRONMENT := development
+
+define app_pod
+	$(shell kubectl get pods \
+		--namespace $(APP) \
+		-l app=$(APP) \
+		-o jsonpath='{.items[0].metadata.name}' \
+	)
+endef
 
 .PHONY: upgrade
 upgrade: ## Install/upgrade application
@@ -14,22 +21,24 @@ upgrade: ## Install/upgrade application
 		&& helm init
 
 	eval $$(minikube docker-env) \
-		&& docker build -t keolo/$(APP):latest . \
+		&& docker build -t $(REPOSITORY):$(TAG) . \
 		&& helm upgrade \
 			$(RELEASE) \
 			$(CHART) \
 			--install \
-			--repo http://127.0.0.1:8879 \
 			--namespace $(APP) \
 			--recreate-pods \
 			--force \
+			--set image.repository=$(REPOSITORY) \
+			--set image.tag=$(TAG) \
+			--set environment=$(ENVIRONMENT) \
 		&& make restart
 
 	@kubectl get -w pods --namespace $(APP)
 
 .PHONY: test
 test: ## Run test suite
-	@kubectl exec $(APP_POD) rspec
+	kubectl exec $(app_pod) rspec --namespace $(APP)
 
 .PHONY: get
 get: ## Get running resources
@@ -41,14 +50,14 @@ open: ## Open application in the browser
 
 .PHONY: sh
 sh: ## Shell into application pod
-	@kubectl exec -it $(APP_POD) sh --namespace $(APP)
+	@kubectl exec -it $(app_pod) sh --namespace $(APP)
 
 .PHONY: logs
 logs: ## Tail application logs
-	kubectl logs -f $(APP_POD) --namespace $(APP)
+	kubectl logs -f $(app_pod) --namespace $(APP)
 
 .PHONY: restart
-restart: ## Delete application pods (which will automatically start another one)
+restart: ## Delete application pods (deployments auto-create pods)
 	kubectl delete pod --namespace $(APP) -l app=$(APP)
 	@kubectl get -w pods --namespace $(APP)
 
@@ -71,7 +80,7 @@ history: ## Get the history of this release
 
 .PHONY: rollback
 rollback: ## Rollback to a particular version
-	helm rollback go-learn-local --recreate-pods $(VERSION)
+	helm rollback $(RELEASE) --recreate-pods $(VERSION)
 
 .PHONY: clean
 clean: ## Remove dangling docker images
